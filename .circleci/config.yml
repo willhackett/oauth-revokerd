@@ -26,7 +26,8 @@ jobs:
       - run:
           name: "Tag Image"
           command: |
-            docker tag oauth-revokerd:$CIRCLE_BRANCH oauth-revokerd:$(git describe --abbrev=0 --tags || $CIRCLE_BRANCH)
+            TAG=build_$CIRCLE_BUILD_NUM
+            docker tag oauth-revokerd:$TAG oauth-revokerd:$(git describe --abbrev=0 --tags || $TAG)
       - run:
           name: "Push Docker Image"
           command: |
