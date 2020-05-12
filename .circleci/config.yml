@@ -31,4 +31,4 @@ jobs:
 
             VERSION=$(git describe --abbrev=0 --tags || $TAG)
             docker tag oauth-revokerd:$TAG willhackett/oauth-revokerd:$VERSION
-            docker push oauth-revokerd:$VERSION
+            docker push willhackett/oauth-revokerd:$VERSION
