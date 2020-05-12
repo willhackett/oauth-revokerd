@@ -10,7 +10,8 @@ jobs:
       - run:
           name: Setup
           command: |
-            apk add docker-cli
+            apt-get update
+            apt-get install docker-cli
             go get -u golang.org/x/lint/golint
       - run:
           name: "Test"
