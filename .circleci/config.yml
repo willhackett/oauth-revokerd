@@ -8,11 +8,13 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Setup
+          command: |
+            apk add docker-cli
+            go get -u golang.org/x/lint/golint
+      - run:
           name: "Test"
           command: make test
-      - run:
-          name: Install Docker client
-          command: apk add docker-cli
       - run:
           name: "Docker Image Build"
           command: |
