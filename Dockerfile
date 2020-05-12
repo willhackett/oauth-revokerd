@@ -1,9 +1,9 @@
 FROM golang:1.14-alpine AS build-env
 
 WORKDIR /var/app
-COPY .* /var/app
+COPY . /var/app
 
-RUN make build
+RUN go build -o ./oauth-revokerd -ldflags "-X main.tag=$TAG" .
 
 ###
 
