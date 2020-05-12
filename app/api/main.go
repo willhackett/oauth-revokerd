@@ -10,6 +10,7 @@ import (
 	"github.com/willhackett/oauth-revokerd/app/config"
 )
 
+// API produces the methods for the the REST API
 type API struct {
 	config config.Configuration
 	logger *log.Entry
