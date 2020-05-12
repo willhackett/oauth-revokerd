@@ -27,7 +27,7 @@ jobs:
           name: "Tag Image"
           command: |
             TAG=build_$CIRCLE_BUILD_NUM
-            docker tag oauth-revokerd:$TAG willhackett/oauth-revokerd:$(git describe --abbrev=0 --tags || $TAG)
+            docker tag oauth-revokerd:$TAG oauth-revokerd:$(git describe --abbrev=0 --tags || $TAG)
       - run:
           name: "Push Docker Image"
           command: |
@@ -36,5 +36,7 @@ jobs:
             docker pull oauth-revokerd:$BRANCH
 
             VERSION=$(git describe --abbrev=0 --tags || $TAG)
+            echo $VERSION
+            echo "oauth-revokerd:$VERSION"
             docker tag oauth-revokerd:$TAG oauth-revokerd:$VERSION
-            docker push willhackett/oauth-revokerd:$VERSION
+            docker push oauth-revokerd:$VERSION
