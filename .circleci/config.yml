@@ -28,7 +28,6 @@ jobs:
           command: |
             echo "$DOCKER_API_KEY" | docker login --username $DOCKER_USER --password-stdin
             TAG=build_$CIRCLE_BUILD_NUM
-            docker pull oauth-revokerd:$BRANCH
 
             VERSION=$(git describe --abbrev=0 --tags || $TAG)
             docker tag oauth-revokerd:$TAG willhackett/oauth-revokerd:$VERSION
