@@ -1,0 +1,37 @@
+version: 2.0
+orbs:
+  semantic-versioning: payfit/semantic-versioning@0.66.0
+jobs:
+  build:
+    docker:
+      - image: cimg/go:1.14-node
+    steps:
+      - checkout
+      - run:
+          name: "Test"
+          command: make test
+      - run:
+          name: Install Docker client
+          command: apk add docker-cli
+      - run:
+          name: "Docker Image Build"
+          command: |
+            TAG=build_$CIRCLE_BUILD_NUM
+            docker build -t oauth-revokerd:$TAG .
+      - run:
+          name: "Generate Semantic Release"
+          command: "npx semantic-release"
+      - run:
+          name: "Tag Image"
+          command: |
+            docker tag oauth-revokerd:$CIRCLE_BRANCH oauth-revokerd:$(git describe --abbrev=0 --tags || $CIRCLE_BRANCH)
+      - run:
+          name: "Push Docker Image"
+          command: |
+            echo "$DOCKER_API_KEY" | docker login --username $DOCKER_USER --password-stdin
+            TAG=build_$CIRCLE_BUILD_NUM
+            docker pull oauth-revokerd:$BRANCH
+
+            VERSION=$(git describe --abbrev=0 --tags || $TAG)
+            docker tag oauth-revokerd:$TAG oauth-revokerd:$VERSION
+            docker push oauth-revokerd:$VERSION
