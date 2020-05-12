@@ -36,5 +36,5 @@ jobs:
             docker pull oauth-revokerd:$BRANCH
 
             VERSION=$(git describe --abbrev=0 --tags || $TAG)
-            docker tag willhackett/oauth-revokerd:$TAG oauth-revokerd:$VERSION
+            docker tag oauth-revokerd:$TAG oauth-revokerd:$VERSION
             docker push willhackett/oauth-revokerd:$VERSION
