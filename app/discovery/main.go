@@ -1,13 +1,11 @@
 package discovery
 
 import (
-	"net"
-	"time"
+	"context"
+	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/brutella/dnssd"
 	"github.com/willhackett/oauth-revokerd/app/config"
-	"golang.org/x/net/ipv4"
-	"golang.org/x/net/ipv6"
 )
 
 // IPv specified which protocol to use
@@ -41,88 +39,64 @@ func (d *Discovery) addPeer(ip string, ready bool) {
 	})
 }
 
-func (d *Discovery) removePeer(ip string) {
-	index := 0
+// func (d *Discovery) removePeer(ip string) {
+// 	index := 0
 
-	for i, peer := range d.peers {
-		if peer.IP == ip {
-			index++
-			break;
-		}
-		index++
-	}
+// 	for i, peer := range d.peers {
+// 		if peer.IP == ip {
+// 			index++
+// 			break
+// 		}
+// 		index++
+// 	}
 
-	peers := d.peers[len(d.peers)-1], d.peers[index] = d.peers[index], d.peers[len(d.peers)-1]
-	d.peers = peers[:len(d.peers)-1]
-}
+// 	peers := d.peers[len(d.peers)-1], d.peers[index] == d.peers[index], d.peers[len(d.peers)-1]
+// 	d.peers = peers[:len(d.peers)-1]
+// }
 
 func (d *Discovery) updatePeer(ip string, ready bool) {
 	index := 0
 
-	for i, peer := range d.peers {
+	for _, peer := range d.peers {
 		if peer.IP == ip {
 			index++
-			break;
+			break
 		}
 		index++
 	}
 
 	d.peers[index] = Peer{
-		IP: ip,
+		IP:    ip,
 		Ready: ready,
 	}
 }
 
-func (d *Discovery) discover() {
-	address := net.JoinHostPort(d.config.MulticastAddress, d.config.MulticastPort)
+// func (d *Discovery) discover() {
+// 	address := net.JoinHostPort(d.config.MulticastAddress, d.config.MulticastPort)
 
-}
+// }
 
-// Init creates the discovery service
-func (d *Discovery) Init(config config.Configuration) {
+// Init starts announcing the service is ready on the network
+func (d *Discovery) Init(config *config.Configuration) {
 	d.config = config
-	d.Peers = Peers{}
+	d.peers = []Peer{}
 
-	multicastPort := strconv.Atoi(d.config.MulticastPort)
-	multicastAddresses := net.ParseIP(d.config.MulticastAddress)
-	address := net.JoinHostPort(d.config.MulticastAddress, d.config.MulticastPort)
-	ticker := time.NewTicker(60 * time.Second)
-
-	// Retrieve listeners
-	interfaces, err := net.Interfaces()
-	if err != nil {
-		log.Fatal("Could not discover interfaces", err)
+	cfg := dnssd.Config{
+		Name: "oauth-revokerd",
+		Type: "_http._tcp",
+		Port: config.Port,
 	}
+	svc, _ := dnssd.NewService(cfg)
+	resp, _ := dnssd.NewResponder()
 
-	// Open a connection on the multicast port and address
-	connection, err := net.ListenPacket(fmt.Sprintf("udp%d", d.config.MulticastPort), address)
-	if err != nil {
-		return
-	}
-	defer c.Close()
+	hdl, _ := resp.Add(svc)
 
-	// Specify the protocol to use
-	var proto net.PacketConn
-	if d.config.MulticastProtocol == IPv4 {
-		proto = net.PacketConn{ipv4.NewPacketConn(connection)}
-	} else {
-		proto = net.PacketConn{ipv6.NewPacketConn(connection)}
-	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	for i := range interfaces {
-		proto.JoinGroup(&interfaces[i], &net.UDPAddr{IP: multicastAddresses, Port: multicastPort})
-	}
+	resp.Respond(ctx)
 
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				d.discover()
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+	hdl.UpdateText(map[string]string{"ready": "true"}, resp)
+
+	fmt.Println(svc)
 }
