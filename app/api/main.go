@@ -4,7 +4,9 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
+	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/willhackett/oauth-revokerd/app/config"
@@ -12,8 +14,9 @@ import (
 )
 
 const (
-	errInvalidMethod = "Unsupported method"
-	errNotFound      = "Record not found"
+	errInvalidMethod          = "Unsupported method"
+	errNotFound               = "Record not found"
+	errUnableToProcessPayload = "Unable to process payload"
 )
 
 // API produces the methods for the the REST API
@@ -23,38 +26,108 @@ type API struct {
 	logger *log.Entry
 }
 
-func (api *API) handleFilterEndpoint(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "Get Filter")
-}
+func (api *API) handlePostRevocation(w http.ResponseWriter, req *http.Request) {
+	err := req.ParseForm()
 
-func (api *API) handleRevokeEndpoint(w http.ResponseWriter, req *http.Request) {
-	switch req.Method {
-	case http.MethodGet:
-		query := req.URL.Query()
+	if err != nil {
+		api.resolve(req, w, http.StatusBadRequest, "Cannot parse form body")
+		return
+	}
 
-		jti := query.Get("jti")
-		if jti == "" {
-			w.WriteHeader(http.StatusInternalServerError)
-			io.WriteString(w, "Missing jti from search query")
+	form := req.Form
+	jti := form.Get("jti")
+	expiresIn, err := strconv.Atoi(form.Get("expires_in"))
+
+	if err != nil {
+		api.resolve(req, w, http.StatusBadRequest, "`expires_in` must be a number of seconds until the record should expire")
+		return
+	}
+
+	if jti == "" {
+		api.resolve(req, w, http.StatusBadRequest, "Body must include `jti` and `expires_in` values")
+		return
+	}
+
+	body := db.Record{
+		ExpiresAt: time.Now().Add(time.Duration(expiresIn) * time.Second),
+		ExpiresIn: expiresIn,
+	}
+
+	api.cache.Put(jti, body, func(err error) {
+		if err != nil {
+			log.Fatal("Failed to write "+jti+" to database", err)
+			api.resolve(req, w, http.StatusInternalServerError, "Failed to write resource")
 			return
 		}
 
-		api.cache.Get(jti, func(err error, rec *db.Record) {
-			if err != nil {
-				w.WriteHeader(http.StatusNotFound)
-				io.WriteString(w, errNotFound)
-				return
-			}
+		api.resolve(req, w, http.StatusCreated, "Created")
+	})
+	return
+}
 
-			w.WriteHeader(http.StatusNoContent)
-			io.WriteString(w, "Found")
-		})
-		return
-	default:
-		w.WriteHeader(http.StatusBadRequest)
-		io.WriteString(w, errInvalidMethod)
+func (api *API) handleGetRevocation(w http.ResponseWriter, req *http.Request) {
+	jti := req.URL.Path[len("/revocations/"):]
+
+	if jti == "" {
+		api.resolve(req, w, http.StatusBadRequest, "Missing `jti` from path")
 		return
 	}
+
+	api.cache.Get(jti, func(err error, rec *db.Record) {
+		if err != nil {
+			api.resolve(req, w, http.StatusNotFound, errNotFound)
+			return
+		}
+
+		api.resolve(req, w, http.StatusNoContent, "`jti` exists in store")
+	})
+}
+
+func (api *API) handlePutRevocation(w http.ResponseWriter, req *http.Request) {
+
+	w.WriteHeader(http.StatusNoContent)
+	io.WriteString(w, "Hello")
+
+}
+
+func (api *API) handleDeleteRevocation(w http.ResponseWriter, req *http.Request) {
+
+	w.WriteHeader(http.StatusNoContent)
+	io.WriteString(w, "Hello")
+
+}
+
+func (api *API) handleGetFilter(w http.ResponseWriter, req *http.Request) {
+	io.WriteString(w, "Get Filter")
+}
+
+func (api *API) log(req *http.Request, status int, message string) {
+	fields := log.Fields{
+		"path":         req.URL.Path,
+		"x-request-id": req.Header.Get("x-request-id"),
+		"status":       status,
+		"message":      message,
+	}
+
+	log := api.logger.WithFields(fields)
+
+	switch true {
+	case status >= 500:
+		log.Error()
+		return
+	case status >= 400:
+		log.Warn()
+		return
+	default:
+		log.Info()
+		return
+	}
+}
+
+func (api *API) resolve(req *http.Request, w http.ResponseWriter, status int, message string) {
+	api.log(req, status, message)
+	w.WriteHeader(status)
+	io.WriteString(w, message)
 }
 
 // Init starts the server
@@ -69,11 +142,18 @@ func Init(config config.Configuration, cache *db.Cache) {
 		logger,
 	}
 
-	http.HandleFunc("/revoke", api.handleRevokeEndpoint)
-	http.HandleFunc("/filter", api.handleFilterEndpoint)
+	router := mux.NewRouter()
+
+	router.HandleFunc("/filter", api.handleGetFilter).Methods("GET")
+	router.HandleFunc("/revocations", api.handlePostRevocation).Methods("POST")
+	router.HandleFunc("/revocations/{id}", api.handleGetRevocation).Methods("GET")
+	router.HandleFunc("/revocations/{id}", api.handlePutRevocation).Methods("PUT")
+	router.HandleFunc("/revocations/{id}", api.handleDeleteRevocation).Methods("DELETE")
 
 	portString := strconv.Itoa(api.config.Port)
 
-	log.Println("Server running at on port" + portString + "")
+	http.Handle("/", router)
+
+	log.Println("API available at http://127.0.0.1:" + portString + "/")
 	log.Fatal(http.ListenAndServe(":"+portString, nil))
 }

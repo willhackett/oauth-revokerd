@@ -6,6 +6,7 @@ require (
 	github.com/boltdb/bolt v1.3.1 // indirect
 	github.com/brutella/dnssd v1.1.1
 	github.com/dgraph-io/badger/v2 v2.0.3
+	github.com/gorilla/mux v1.7.4
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/iwanbk/bcache v0.0.0-20190501020029-92331d3ef6d8
 	github.com/json-iterator/go v1.1.9 // indirect
