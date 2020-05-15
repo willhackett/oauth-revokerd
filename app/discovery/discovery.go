@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/hashicorp/go-discover"
+	"github.com/willhackett/oauth-revokerd/app/discovery/provider"
 )
 
 type CloudDiscovery struct {
@@ -79,7 +80,7 @@ func (c *CloudDiscovery) SetConfig(cfg map[string]interface{}) error {
 func (c *CloudDiscovery) getArgs() string {
 	result := fmt.Sprintf("provider=%s", c.config.Provider)
 
-	return result + c.config.Args
+	return result + provider.GenerateArgs(c.config.Args)
 }
 
 func (c *CloudDiscovery) DiscoverPeers() ([]string, error) {

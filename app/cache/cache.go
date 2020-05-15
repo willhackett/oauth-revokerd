@@ -56,14 +56,17 @@ func (cache *Cache) Get(jti string) (time.Time, error) {
 
 // Init brings up the embedded store
 func Init(config config.Configuration) *Cache {
-	cfg := olricCfg.New(config.ClusterStrategy)
+	cfg := olricCfg.New(config.MemberlistConfig)
 
 	disco := &discovery.CloudDiscovery{}
 
 	cfg.LogVerbosity = 6
-	cfg.ServiceDiscovery = map[string]interface{}{
-		"plugin":   disco,
-		"provider": "mdns",
+
+	if config.DiscoveryProvider != "" {
+		cfg.ServiceDiscovery = map[string]interface{}{
+			"plugin":   disco,
+			"provider": config.DiscoveryProvider,
+		}
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())

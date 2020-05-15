@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3"
 
 services:
   oauth-revokerd:
@@ -6,6 +6,7 @@ services:
     environment:
       CLUSTER_STRATEGY: lan
       EXCLUDE_PORTS: "3320,3322"
+      DISCOVERY_PROVIDER: "k8s"
   nginx:
     image: dockercloud/haproxy:latest
     links:

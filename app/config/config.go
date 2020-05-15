@@ -8,8 +8,10 @@ import (
 type Configuration struct {
 	// Port defines the port the HTTP server runs on
 	Port int `env:"PORT" default:"8080"`
-	// Clustering Strategy
-	ClusterStrategy string `env:"CLUSTER_STRATEGY" default:"local"`
+	// DiscoveryProvider allows you to specify a provider for Discovery
+	DiscoveryProvider string `env:"DISCOVERY_PROVIDER" default:""`
+	// MemberlistConfig
+	MemberlistConfig string `env:"MEMBERLIST_CONFIG" default:"local"`
 }
 
 // Load will return the Configuration of the environment
