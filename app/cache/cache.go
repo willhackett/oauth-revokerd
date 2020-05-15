@@ -7,6 +7,7 @@ import (
 
 	"github.com/buraksezer/olric"
 	olricCfg "github.com/buraksezer/olric/config"
+	"github.com/buraksezer/olric/query"
 	log "github.com/sirupsen/logrus"
 	"github.com/willhackett/oauth-revokerd/app/config"
 	"github.com/willhackett/oauth-revokerd/app/discovery"
@@ -52,6 +53,39 @@ func (cache *Cache) Get(jti string) (time.Time, error) {
 	expiresAt := time.Unix(timeInt, 0)
 
 	return expiresAt, nil
+}
+
+// Count retrieves the length of the partition
+func (cache *Cache) Count() (int, error) {
+	count := 0
+	cursor, err := cache.dm.Query(query.M{
+		"$onKey": query.M{
+			"$regexMatch": "",
+		},
+	})
+	if err != nil {
+		return 0, err
+	}
+	defer cursor.Close()
+
+	cursor.Range(func(key string, value interface{}) bool {
+		count++
+		return true
+	})
+
+	return count, nil
+}
+
+// Query retrieves a cursor
+func (cache *Cache) Query(iterate func(key string)) error {
+	cursor, err := cache.dm.Query(query.M{
+		"$onKey": query.M{
+			"$regexMatch": "",
+		},
+	})
+	defer cursor.Close()
+
+	return err
 }
 
 // Init brings up the embedded store

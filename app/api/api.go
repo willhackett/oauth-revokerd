@@ -97,6 +97,16 @@ func (api *API) handleGetFilter(w http.ResponseWriter, req *http.Request) {
 	io.WriteString(w, "Get Filter")
 }
 
+func (api *API) handleGetCount(w http.ResponseWriter, req *http.Request) {
+	count, err := api.cache.Count()
+	if err != nil {
+		api.resolve(req, w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	api.resolve(req, w, http.StatusOK, strconv.Itoa(count))
+}
+
 func (api *API) log(req *http.Request, status int, message string) {
 	fields := log.Fields{
 		"path":         req.URL.Path,
@@ -141,6 +151,7 @@ func Init(config config.Configuration, cache *cache.Cache) {
 	router := mux.NewRouter()
 
 	router.HandleFunc("/filter", api.handleGetFilter).Methods("GET")
+	router.HandleFunc("/count", api.handleGetCount).Methods("GET")
 	router.HandleFunc("/revocations", api.handlePostRevocation).Methods("POST")
 	router.HandleFunc("/revocations/{id}", api.handleGetRevocation).Methods("GET")
 	router.HandleFunc("/revocations/{id}", api.handlePutRevocation).Methods("PUT")
