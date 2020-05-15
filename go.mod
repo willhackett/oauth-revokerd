@@ -9,9 +9,11 @@ require (
 	github.com/dgraph-io/badger/v2 v2.0.3
 	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
 	github.com/gorilla/mux v1.7.4
+	github.com/hashicorp/go-discover v0.0.0-20200512163506-9f17182e82be
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/iwanbk/bcache v0.0.0-20190501020029-92331d3ef6d8
 	github.com/json-iterator/go v1.1.9 // indirect
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/sirupsen/logrus v1.6.0
 	github.com/stretchr/testify v1.5.1
 	github.com/weaveworks/mesh v0.0.0-20191105120815-58dbcc3e8e63 // indirect

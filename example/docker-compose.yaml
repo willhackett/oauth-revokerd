@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  oauth-revokerd:
+    image: willhackett/oauth-revokerd:latest
+    environment:
+      CLUSTER_STRATEGY: lan
+      EXCLUDE_PORTS: "3320,3322"
+  nginx:
+    image: dockercloud/haproxy:latest
+    links:
+      - oauth-revokerd
+    ports:
+      - "8080:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock

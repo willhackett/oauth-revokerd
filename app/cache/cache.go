@@ -9,6 +9,7 @@ import (
 	olricCfg "github.com/buraksezer/olric/config"
 	log "github.com/sirupsen/logrus"
 	"github.com/willhackett/oauth-revokerd/app/config"
+	"github.com/willhackett/oauth-revokerd/app/discovery"
 )
 
 var (
@@ -55,28 +56,34 @@ func (cache *Cache) Get(jti string) (time.Time, error) {
 
 // Init brings up the embedded store
 func Init(config config.Configuration) *Cache {
-	defaults := olricCfg.New("local")
+	cfg := olricCfg.New(config.ClusterStrategy)
 
-	defaults.BindPort = config.CachePort
+	disco := &discovery.CloudDiscovery{}
+
+	cfg.LogVerbosity = 6
+	cfg.ServiceDiscovery = map[string]interface{}{
+		"plugin":   disco,
+		"provider": "mdns",
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	defaults.Started = func() {
+	cfg.Started = func() {
 		defer cancel()
-		log.Println("[INFO] Olric is ready to accept connections")
+		log.Info("Store is ready to accept connections")
 	}
 
-	db, err := olric.New(defaults)
+	db, err := olric.New(cfg)
 
 	if err != nil {
-		log.Fatalf("Failed to create Olric instance: %v", err)
+		log.Fatal("Failed to create cache instance", err)
 	}
 
 	go func() {
 		// Call Start at background. It's a blocker call.
 		err = db.Start()
 		if err != nil {
-			log.Fatalf("olric.Start returned an error: %v", err)
+			log.Fatal("Failed to start cache", err)
 		}
 	}()
 
@@ -84,7 +91,7 @@ func Init(config config.Configuration) *Cache {
 
 	dm, err := db.NewDMap(bucketName)
 	if err != nil {
-		log.Fatalf("olric.NewDMap returned an error: %v", err)
+		log.Fatal("Failed to create bucket", err)
 	}
 
 	return &Cache{

@@ -6,10 +6,10 @@ import (
 
 // Configuration contains the environment variables
 type Configuration struct {
-	// Port is the port the API will run on
+	// Port defines the port the HTTP server runs on
 	Port int `env:"PORT" default:"8080"`
-	// CachePort is the port the cache service runs on
-	CachePort int `env:"CACHE_PORT" default:"8444"`
+	// Clustering Strategy
+	ClusterStrategy string `env:"CLUSTER_STRATEGY" default:"local"`
 }
 
 // Load will return the Configuration of the environment
