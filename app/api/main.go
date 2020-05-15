@@ -9,8 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
 
+	"github.com/willhackett/oauth-revokerd/app/cache"
 	"github.com/willhackett/oauth-revokerd/app/config"
-	"github.com/willhackett/oauth-revokerd/app/db"
 )
 
 const (
@@ -21,7 +21,7 @@ const (
 
 // API produces the methods for the the REST API
 type API struct {
-	cache  *db.Cache
+	cache  *cache.Cache
 	config config.Configuration
 	logger *log.Entry
 }
@@ -36,7 +36,7 @@ func (api *API) handlePostRevocation(w http.ResponseWriter, req *http.Request) {
 
 	form := req.Form
 	jti := form.Get("jti")
-	expiresIn, err := strconv.Atoi(form.Get("expires_in"))
+	expiresIn, err := strconv.ParseInt(form.Get("expires_in"), 10, 64)
 
 	if err != nil {
 		api.resolve(req, w, http.StatusBadRequest, "`expires_in` must be a number of seconds until the record should expire")
@@ -48,20 +48,16 @@ func (api *API) handlePostRevocation(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	body := db.Record{
-		ExpiresAt: time.Now().Add(time.Duration(expiresIn) * time.Second),
-		ExpiresIn: expiresIn,
+	expiresInDuration := time.Duration(expiresIn) * time.Second
+
+	err = api.cache.Put(jti, expiresInDuration)
+
+	if err != nil {
+		api.resolve(req, w, http.StatusInternalServerError, "Failed to write resource")
+		return
 	}
 
-	api.cache.Put(jti, body, func(err error) {
-		if err != nil {
-			log.Fatal("Failed to write "+jti+" to database", err)
-			api.resolve(req, w, http.StatusInternalServerError, "Failed to write resource")
-			return
-		}
-
-		api.resolve(req, w, http.StatusCreated, "Created")
-	})
+	api.resolve(req, w, http.StatusCreated, "Created")
 	return
 }
 
@@ -73,14 +69,14 @@ func (api *API) handleGetRevocation(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	api.cache.Get(jti, func(err error, rec *db.Record) {
-		if err != nil {
-			api.resolve(req, w, http.StatusNotFound, errNotFound)
-			return
-		}
+	expiresAt, err := api.cache.Get(jti)
 
-		api.resolve(req, w, http.StatusNoContent, "`jti` exists in store")
-	})
+	if err != nil {
+		api.resolve(req, w, http.StatusNotFound, errNotFound)
+		return
+	}
+
+	api.resolve(req, w, http.StatusNoContent, "`jti` revocation expires at "+expiresAt.Local().String())
 }
 
 func (api *API) handlePutRevocation(w http.ResponseWriter, req *http.Request) {
@@ -131,7 +127,7 @@ func (api *API) resolve(req *http.Request, w http.ResponseWriter, status int, me
 }
 
 // Init starts the server
-func Init(config config.Configuration, cache *db.Cache) {
+func Init(config config.Configuration, cache *cache.Cache) {
 	logger := log.WithFields(log.Fields{
 		"name": "oauth-revokerd",
 	})
