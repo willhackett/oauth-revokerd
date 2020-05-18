@@ -1,5 +1,6 @@
 package provider
 
+// AzureEnvironment contains environment variables for Azure
 type AzureEnvironment struct {
 	TenantID        string `env:"AZURE_TENANT_ID" default:""`
 	ClientID        string `env:"AZURE_CLIENT_ID" default:""`
@@ -8,9 +9,10 @@ type AzureEnvironment struct {
 	TagName         string `env:"AZURE_TAG_NAME" default:""`
 	TagValue        string `env:"AZURE_TAG_VALUE" default:""`
 	ResourceGroup   string `env:"AZURE_RESOURCE_GROUP" default:""`
-	VmScaleSet      string `env:"AZURE_VM_SCALE_SET" default:""`
+	VMScaleSet      string `env:"AZURE_VM_SCALE_SET" default:""`
 }
 
+// AzureMapping contains the field mapping
 func AzureMapping(env AzureEnvironment) map[string]string {
 	return map[string]string{
 		"tenant_id":         env.TenantID,
@@ -20,6 +22,6 @@ func AzureMapping(env AzureEnvironment) map[string]string {
 		"tag_name":          env.TagName,
 		"tag_value":         env.TagValue,
 		"resource_group":    env.ResourceGroup,
-		"vm_scale_set":      env.VmScaleSet,
+		"vm_scale_set":      env.VMScaleSet,
 	}
 }

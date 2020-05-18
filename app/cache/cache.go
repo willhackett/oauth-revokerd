@@ -20,6 +20,7 @@ var (
 	errPackingRecord   = errors.New("Error packing record")
 )
 
+// Cache is the structure for the cache
 type Cache struct {
 	db *olric.Olric
 	dm *olric.DMap

@@ -1,5 +1,6 @@
 package provider
 
+// AWSEnvironment contains environment variables for AWS
 type AWSEnvironment struct {
 	Region          string `env:"AWS_REGION" default:""`
 	TagKey          string `env:"AWS_TAG_KEY" default:"default"`
@@ -9,6 +10,7 @@ type AWSEnvironment struct {
 	SecretAccessKey string `env:"AWS_HOST_NETWORK" default:""`
 }
 
+// AwsMapping creates the values needed by orlic
 func AwsMapping(env AWSEnvironment) map[string]string {
 	return map[string]string{
 		"region":            env.Region,

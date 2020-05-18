@@ -9,12 +9,14 @@ import (
 	"github.com/willhackett/oauth-revokerd/app/discovery/provider"
 )
 
+// CloudDiscovery is the discovery provider type
 type CloudDiscovery struct {
 	config   *Config
 	log      *log.Logger
 	discover *discover.Discover
 }
 
+// Config is the structure of config for the CloudProvider
 type Config struct {
 	Provider string
 	Args     string
@@ -36,6 +38,7 @@ func (c *CloudDiscovery) checkErrors() error {
 	return nil
 }
 
+// Initialize is used in interfacing with Olric
 func (c *CloudDiscovery) Initialize() error {
 	if err := c.checkErrors(); err != nil {
 		return err
@@ -56,10 +59,12 @@ func (c *CloudDiscovery) Initialize() error {
 	return nil
 }
 
+// SetLogger is used in interfacing with Olric
 func (c *CloudDiscovery) SetLogger(l *log.Logger) {
 	c.log = l
 }
 
+// SetConfig is used in interfacing with Olric
 func (c *CloudDiscovery) SetConfig(cfg map[string]interface{}) error {
 	provider, ok := cfg["provider"].(string)
 	if !ok {
@@ -83,6 +88,7 @@ func (c *CloudDiscovery) getArgs() string {
 	return result + provider.GenerateArgs(c.config.Args)
 }
 
+// DiscoverPeers is used in interfacing with Olric
 func (c *CloudDiscovery) DiscoverPeers() ([]string, error) {
 	peers, err := c.discover.Addrs(c.getArgs(), c.log)
 	if err != nil {
@@ -94,8 +100,11 @@ func (c *CloudDiscovery) DiscoverPeers() ([]string, error) {
 	return peers, nil
 }
 
+// Register is unused but required to make this work
 func (c *CloudDiscovery) Register() error { return nil }
 
+// Deregister is unused but required to make this work
 func (c *CloudDiscovery) Deregister() error { return nil }
 
+// Close is unused but required to make this work
 func (c *CloudDiscovery) Close() error { return nil }

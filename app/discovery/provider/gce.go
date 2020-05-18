@@ -1,5 +1,6 @@
 package provider
 
+// GCEEnvironment contains environment variables for Google GCE
 type GCEEnvironment struct {
 	ProjectName     string `env:"GCE_PROJECT_NAME" default:""`
 	TagValue        string `env:"GCE_TAG_VALUE" default:""`
@@ -7,6 +8,7 @@ type GCEEnvironment struct {
 	CredentialsFile string `env:"GCE_CREDENTIALS_FILE" default:""`
 }
 
+// GCEMapping contains mappings for the environment variables
 func GCEMapping(env GCEEnvironment) map[string]string {
 	return map[string]string{
 		"project_name":     env.ProjectName,

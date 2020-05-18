@@ -12,10 +12,11 @@ var (
 	errFalsePositive = errors.New("error: falsePositive must be greater than 0 and less than 1")
 )
 
+// ExportInterface contains the structure of the JSON export
 type ExportInterface struct {
-	size uint64  `json:"size"`
-	bits []uint8 `json:"bits"`
-	hash uint64  `json:"hash"`
+	Size uint64  `json:"size"`
+	Bits []uint8 `json:"bits"`
+	Hash uint64  `json:"hash"`
 }
 
 // BloomFilter contains the information for a BloomFilter data store.
@@ -64,9 +65,9 @@ func (bf *BloomFilter) Test(data []byte) bool {
 // Export the filter as JSON
 func (bf *BloomFilter) Export() ([]byte, error) {
 	exp := &ExportInterface{
-		bf.size,
-		bf.bits,
-		bf.hash,
+		Size: bf.size,
+		Bits: bf.bits,
+		Hash: bf.hash,
 	}
 
 	d, err := json.Marshal(exp)

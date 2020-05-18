@@ -46,6 +46,7 @@ func getParams(provider string) map[string]string {
 	}
 }
 
+// GenerateArgs creates the string for the arguments
 func GenerateArgs(provider string) string {
 	args := ""
 
@@ -53,7 +54,7 @@ func GenerateArgs(provider string) string {
 
 	for key, value := range params {
 		if value != "" {
-			args = args + fmt.Sprintf("%s=%d", key, value) + " "
+			args = args + fmt.Sprintf("%s=%s", key, value) + " "
 		}
 	}
 
