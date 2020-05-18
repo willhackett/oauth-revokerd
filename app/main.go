@@ -3,6 +3,7 @@ package app
 import (
 	log "github.com/sirupsen/logrus"
 	"github.com/willhackett/oauth-revokerd/app/api"
+	"github.com/willhackett/oauth-revokerd/app/cache"
 	"github.com/willhackett/oauth-revokerd/app/config"
 )
 
@@ -15,5 +16,7 @@ func Init() {
 		log.Fatal("Failed to load configuration", err)
 	}
 
-	api.Init(config)
+	cache := cache.Init(config)
+
+	defer api.Init(config, cache)
 }

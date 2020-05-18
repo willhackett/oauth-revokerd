@@ -16,3 +16,6 @@ vendor/
 
 # Output binary
 oauth-revokerd
+
+# Plugins
+olric-cloud-plugin.so
