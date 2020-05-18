@@ -12,6 +12,8 @@ type Configuration struct {
 	DiscoveryProvider string `env:"DISCOVERY_PROVIDER" default:""`
 	// MemberlistConfig
 	MemberlistConfig string `env:"MEMBERLIST_CONFIG" default:"local"`
+	// Threshold is the percentage probability to return true for in the filter
+	Threshold float64 `env:"THRESHOLD" default:"0.8"`
 }
 
 // Load will return the Configuration of the environment

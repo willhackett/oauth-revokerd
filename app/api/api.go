@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/gorilla/mux"
 	log "github.com/sirupsen/logrus"
+	"github.com/willhackett/oauth-revokerd/app/filter"
 
 	"github.com/willhackett/oauth-revokerd/app/cache"
 	"github.com/willhackett/oauth-revokerd/app/config"
@@ -94,7 +96,40 @@ func (api *API) handleDeleteRevocation(w http.ResponseWriter, req *http.Request)
 }
 
 func (api *API) handleGetFilter(w http.ResponseWriter, req *http.Request) {
-	io.WriteString(w, "Get Filter")
+	total, err := api.cache.Count()
+	if err != nil {
+		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to get count: %s", err.Error()))
+		return
+	}
+
+	bf, err := filter.New(total, 0.85)
+	if err != nil {
+		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to create filter: %s", err.Error()))
+		return
+	}
+
+	err = api.cache.Query(func(jti string) {
+		bf.Add([]byte(jti))
+	})
+
+	if err != nil {
+		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to populate filter: %s", err.Error()))
+		return
+	}
+
+	export, err := bf.Export()
+	if err != nil {
+		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to export filter: %s", err.Error()))
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, err = w.Write(export)
+	api.log(req, http.StatusOK, "Filter Supplied")
+	if err != nil {
+		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to write response: %s", err.Error()))
+		return
+	}
 }
 
 func (api *API) handleGetCount(w http.ResponseWriter, req *http.Request) {
