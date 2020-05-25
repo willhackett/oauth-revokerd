@@ -26,6 +26,7 @@ type API struct {
 	cache  *cache.Cache
 	config config.Configuration
 	logger *log.Entry
+	filter *filter.Filter
 }
 
 func (api *API) handlePostRevocation(w http.ResponseWriter, req *http.Request) {
@@ -78,7 +79,15 @@ func (api *API) handleGetRevocation(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	api.resolve(req, w, http.StatusNoContent, "`jti` revocation expires at "+expiresAt.Local().String())
+	isInFilter := api.filter.Test(jti)
+
+	resStr := "`jti` revocation expires at " + expiresAt.Local().String()
+
+	if isInFilter {
+		resStr += "- present in filter."
+	}
+
+	api.resolve(req, w, http.StatusNoContent, resStr)
 }
 
 func (api *API) handlePutRevocation(w http.ResponseWriter, req *http.Request) {
@@ -102,29 +111,27 @@ func (api *API) handleGetFilter(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	bf, err := filter.New(total, 0.85)
-	if err != nil {
-		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to create filter: %s", err.Error()))
-		return
-	}
+	filter := filter.New(uint(total))
 
 	err = api.cache.Query(func(jti string) {
-		bf.Add([]byte(jti))
+		filter.Add(jti)
 	})
+
+	api.filter = filter
 
 	if err != nil {
 		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to populate filter: %s", err.Error()))
 		return
 	}
 
-	export, err := bf.Export()
+	filterJSON, err := filter.MarshalJSON()
 	if err != nil {
 		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to export filter: %s", err.Error()))
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write(export)
+	_, err = w.Write(filterJSON)
 	api.log(req, http.StatusOK, "Filter Supplied")
 	if err != nil {
 		api.resolve(req, w, http.StatusInternalServerError, fmt.Sprintf("Failed to write response: %s", err.Error()))
@@ -177,10 +184,13 @@ func Init(config config.Configuration, cache *cache.Cache) {
 		"name": "oauth-revokerd",
 	})
 
+	filter := filter.New(1)
+
 	api := API{
 		cache,
 		config,
 		logger,
+		filter,
 	}
 
 	router := mux.NewRouter()
