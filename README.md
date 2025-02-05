@@ -13,3 +13,7 @@ Distributed systems can reduce backpressure introduced by token validation by ut
 OAuth-Revokerd is an auto-scaling service meant to be deployed in Amazon ECS (or similar). Internally, it maintains an in-memory database, peer auto-discovery and a REST API used invalidate tokens and download the compiled bloom filter.
 
 ![oauth-revokerd](./docs/oauth-revokerd.jpg)
+
+## Accompanying write-up
+
+https://notes.willhackett.com/distributed-token-invalidation/
